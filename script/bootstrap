@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+
+DOTFILES_ROOT="`pwd`";
+
+set -e;
+
+info ()    { printf " [ \033[00;34m..\033[0m ] $1\n"; }
+user ()    { printf "\r [ \033[0;33m?\033[0m  ] $1\n"; }
+success () { printf "\r\033[2K [ \033[00;32mOK\033[0m ] $1\n"; }
+fail ()    { printf "\r\033[2K [\033[0;31mFAIL\033[0m] $1\n\n"; exit $2; }
+
+link_files () {
+  ln -s $1 $2;
+  success "linked $1 to $2";
+}
+
+install_dotfiles () {
+    info 'Installing dotfiles';
+	OLDFILEACTION=false;
+
+    for SOURCE in `find $DOTFILES_ROOT -maxdepth 2 -name \*.symlink`; do
+        DESTINATION="$HOME/.`basename \"${SOURCE%.*}\"`";
+        if [ -f $DESTINATION ] || [ -d $DESTINATION ]; then
+		
+			if [ -h $DESTINATION ] && [ $(find -L $SOURCE -samefile $DESTINATION 2> /dev/null | wc -l) -eq 1 ]; then
+				success "File $SOURCE is symlinked to $DESTINATION";
+				continue;
+			fi;
+		
+			if [ "$OLDFILEACTION" == "overwrite" ] || [ "$OLDFILEACTION" == "backup" ] || [ "$OLDFILEACTION" == "skip" ]; then
+				OLDFILEACTION=false;
+			fi;
+		
+			if [ "$OLDFILEACTION" == "false" ]; then
+				user "File already exists: `basename $DESTINATION`, what do you want to do? [s]kip, [S]kip all, [o]verwrite, [O]verwrite all, [b]ackup, [B]ackup all?";
+				read -n 1 action;
+				
+	            case "$action" in
+	              o )
+	                OLDFILEACTION="overwrite";;
+	              O )
+	                OLDFILEACTION="overwrite_all";;
+	              b )
+	                OLDFILEACTION="backup";;
+	              B )
+	                OLDFILEACTION="backup_all";;
+	              s )
+	                OLDFILEACTION="skip";;
+	              S )
+	                OLDFILEACTION="skip_all";;
+	              * )
+				    fail "invalid option";;
+	            esac;
+    		fi;
+			
+			if [ "$OLDFILEACTION" == "overwrite" ] || [ "$OLDFILEACTION" == "overwrite_all" ]; then
+	            rm -rf $DESTINATION;
+	            success "Removed $DESTINATION";
+			fi;
+
+			if [ "$OLDFILEACTION" == "backup" ] || [ "$OLDFILEACTION" == "backup_all" ]; then
+	            mv $DESTINATION $DESTINATION\.backup;
+	            success "Moved $DESTINATION to $DESTINATION.backup";
+	        fi;
+
+			if [ "$OLDFILEACTION" == "skip" ] || [ "$OLDFILEACTION" == "skip_all" ]; then
+	            success "Skipped $SOURCE";
+				continue;
+			fi;
+        fi;
+        link_files $SOURCE $DESTINATION;
+    done;
+}
+
+install_dotfiles;
+success '  All installed!'
