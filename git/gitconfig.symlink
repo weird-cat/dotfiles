@@ -1,9 +1,30 @@
 [user]
     name  = Wojciech Szaranski
     email = owner@weird.cat
+    signingkey = 6E343EEA
+
+[format]
+	signoff = 1
 
 [core]
     excludesfile = ~/.gitignore
+
+[color]
+    ui = auto
+	
+[merge]
+    tool = phpstorm
+[diff]
+    tool = phpstorm
+[difftool]
+    prompt = true
+	
+[difftool "phpstorm"]
+    cmd = /Applications/PHPStorm.app/Contents/MacOS/phpstorm diff $(cd $(dirname "$LOCAL") && pwd)/$(basename "$LOCAL") $(cd $(dirname "$REMOTE") && pwd)/$(basename "$REMOTE")
+    trustExitCode = true
+[mergetool "phpstorm"]
+    cmd = /Applications/PHPStorm.app/Contents/MacOS/phpstorm merge $(cd $(dirname "$LOCAL") && pwd)/$(basename "$LOCAL") $(cd $(dirname "$REMOTE") && pwd)/$(basename "$REMOTE") $(cd $(dirname "$BASE") && pwd)/$(basename "$BASE") $(cd $(dirname "$MERGED") && pwd)/$(basename "$MERGED")
+    trustExitCode = true
 
 [alias]
     co   = checkout
@@ -11,5 +32,6 @@
     st   = status
     br   = branch
     hist = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
+    snapshot = !git stash save "snapshot: $(date)" && git stash apply "stash@{0}"
     type = cat-file -t
     dump = cat-file -p
